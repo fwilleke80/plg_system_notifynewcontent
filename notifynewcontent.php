@@ -28,7 +28,7 @@ class PlgSystemNotifynewcontent extends CMSPlugin
     {
         Log::add('onContentAfterSave triggered with context: ' . $context, Log::DEBUG, 'notifynewcontent');
 
-        if ($isNew && $this->isMonitoredContext($context))
+        if ($this->isMonitoredEvent($isNew) && $this->isMonitoredContext($context))
         {
             Log::add('New article "' . $article->title . '" detected', Log::DEBUG, 'notifynewcontent');
             $targetCategoryId = (int) $this->params->get('monitor_category');
@@ -38,6 +38,11 @@ class PlgSystemNotifynewcontent extends CMSPlugin
                 $this->notifyUsers($article, $targetCategoryId);
             }
         }
+    }
+
+    protected function isMonitoredEvent($isNew)
+    {
+        return $isNew || $this->params->get('notify_on_edit');
     }
 
     protected function isMonitoredContext($context)

@@ -6,7 +6,7 @@
     <copyright>(C) 2024 Frank Willeke</copyright>
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <authorUrl>www.frankwilleke.com</authorUrl>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
     <description>PLG_SYSTEM_NOTIFYNEWCONTENT_DESC</description>
     <files>
         <filename plugin="notifynewcontent">notifynewcontent.php</filename>
@@ -23,6 +23,7 @@
             <fieldset name="basic">
                 <!-- <field name="monitor_category" type="text" default="11" size="3" label="PLG_SYSTEM_NOTIFYNEWCONTENT_PARAM_MONITORCATEGORYID" description="PLG_SYSTEM_NOTIFYNEWCONTENT_PARAM_MONITORCATEGORYID_DESCID" /> -->
                 <field name="monitor_category" type="category" extension="com_content" default="11" label="PLG_SYSTEM_NOTIFYNEWCONTENT_PARAM_MONITORCATEGORYID" description="PLG_SYSTEM_NOTIFYNEWCONTENT_PARAM_MONITORCATEGORYID_DESC" />
+                <field name="notify_on_edit" type="checkbox" label="PLG_SYSTEM_NOTIFYNEWCONTENT_PARAM_NOTIFYONEDIT" description="PLG_SYSTEM_NOTIFYNEWCONTENT_PARAM_NOTIFYONEDIT_DESC" />
                 <field name="mail_subject" type="text" label="PLG_SYSTEM_NOTIFYNEWCONTENT_PARAM_EMAIL_SUBJECT_LABEL" default="Ein neuer Artikel wurde veröffentlicht!" description="PLG_SYSTEM_NOTIFYNEWCONTENT_PARAM_EMAIL_SUBJECT_DESC" />
                 <field name="mail_body" type="textarea" rows="20" label="PLG_SYSTEM_NOTIFYNEWCONTENT_PARAM_EMAIL_BODY_LABEL" default="Es wurde am {ARTICLE_PUBLISH_DATE} ein neuer Artikel in der Kategorie {ARTICLE_CATEGORY} veröffentlicht:&#13;&#10;&#13;&#10;{ARTICLE_TITLE}&#13;&#10;{ARTICLE_LINK}&#13;&#10;{ARTICLE_INTROTEXT}&#13;&#10;&#13;&#10;Mit freundlichen Grüßen,&#13;&#10;Ihr Webmaster" description="PLG_SYSTEM_NOTIFYNEWCONTENT_PARAM_EMAIL_BODY_DESC" />
             </fieldset>

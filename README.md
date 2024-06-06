@@ -10,7 +10,7 @@ On installation, this plugin creates a custom user field "Notify on new content"
 When a new article is published to a certain category (or to one of its child categories), all users that have "Notify on new content" enabled will receive an email.
 
 ### Configuration
-Go to *Extensions >> Plugins* to configure the plugin. You can select the category to monitor, and compose the mail subject and body.
+Go to *Extensions >> Plugins* to configure the plugin. You can e.g. select the category to monitor, and compose the mail subject and body.
 
 ### Known issues
 * You have to manually set the custom user field "Notify on new content" editable by the users, if you want them to be able to choose.
