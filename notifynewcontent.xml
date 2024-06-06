@@ -18,5 +18,12 @@
         <language tag="de-DE">de-DE/de-DE.plg_system_notifynewcontent.ini</language>
         <language tag="de-DE">de-DE/de-DE.plg_system_notifynewcontent.sys.ini</language>
     </languages>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="$targetCategoryId " type="category" label="Target Category" description="Select the category to monitor for new content notifications." />
+            </fieldset>
+        </fields>
+    </config>
     <scriptfile>install_script.php</scriptfile>
 </extension>

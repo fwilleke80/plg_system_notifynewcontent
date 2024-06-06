@@ -11,9 +11,6 @@ use Joomla\CMS\Log\Log;
 
 class PlgSystemNotifynewcontent extends CMSPlugin
 {
-    // Specify the category ID that you want to monitor
-    protected $targetCategoryId = 11; // Replace with your specific category ID
-
     protected $app;
     protected $db;
 
@@ -29,17 +26,25 @@ class PlgSystemNotifynewcontent extends CMSPlugin
 
     public function onContentAfterSave($context, $article, $isNew)
     {
-        if ($context == 'com_content.article' && $isNew)
+        Log::add('onContentAfterSave triggered with context: ' . $context, Log::DEBUG, 'notifynewcontent');
+
+        if ($isNew && $this->isMonitoredContext($context))
         {
             Log::add('New article "' . $article->title . '" detected', Log::DEBUG, 'notifynewcontent');
-            if ($article && $this->isInTargetCategory($article->catid))
+            $targetCategoryId = (int) $this->params->get('target_category');
+            if ($article && $this->isInTargetCategory($article->catid, $targetCategoryId))
             {
-                $this->notifyUsers($article);
+                $this->notifyUsers($article, $targetCategoryId);
             }
         }
     }
 
-    protected function isInTargetCategory($catid)
+    protected function isMonitoredContext($context)
+    {
+        return $context === 'com_content.article';
+    }
+
+    protected function isInTargetCategory($catid, $targetCategoryId)
     {
         // Check if the category is the target category or one of its subcategories
         $query = $this->db->getQuery(true)
@@ -48,8 +53,8 @@ class PlgSystemNotifynewcontent extends CMSPlugin
             ->where($this->db->quoteName('id') . ' = ' . (int) $catid)
             ->where(
                 '('. $this->db->quoteName('id') . ' = ' . (int) $this->targetCategoryId . 
-                ' OR ' . $this->db->quoteName('parent_id') . ' = ' . (int) $this->targetCategoryId . 
-                ' OR ' . $this->db->quoteName('path') . ' LIKE ' . $this->db->quote('%/' . $this->targetCategoryId . '/%') . ')'
+                ' OR ' . $this->db->quoteName('parent_id') . ' = ' . (int) targetCategoryId . 
+                ' OR ' . $this->db->quoteName('path') . ' LIKE ' . $this->db->quote('%/' . targetCategoryId . '/%') . ')'
             );
 
         $this->db->setQuery($query);
@@ -66,7 +71,7 @@ class PlgSystemNotifynewcontent extends CMSPlugin
         return (bool) $result;
     }
 
-    protected function notifyUsers($article)
+    protected function notifyUsers($article, $targetCategoryId)
     {
         // Get the field ID for 'notify-on-new-content'
         $query = $this->db->getQuery(true)
