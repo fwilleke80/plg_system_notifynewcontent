@@ -164,7 +164,7 @@ class PlgSystemNotifynewcontent extends CMSPlugin
             $mail = Factory::getMailer();
             $mail->addRecipient($user->email);
             $mail->setSubject($subject);
-            $mail->setBody($body);
+            $mail->setBody(str_replace('{USERNAME}', $user->name, $body));
             $mail->Send();
 
             Log::add('Email sent to: ' . $user->email, Log::DEBUG, 'notifynewcontent');
