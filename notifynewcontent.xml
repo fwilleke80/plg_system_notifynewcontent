@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="system" version="5.0" method="upgrade">
+    <name>PLG_SYSTEM_NOTIFYNEWCONTENT</name>
+    <author>Frank Willeke</author>
+    <creationDate>June 2024</creationDate>
+    <copyright>(C) 2024 Frank Willeke</copyright>
+    <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+    <authorUrl>www.frankwilleke.com</authorUrl>
+    <version>1.0.3</version>
+    <description>PLG_SYSTEM_NOTIFYNEWCONTENT_DESC</description>
+    <files>
+        <filename plugin="notifynewcontent">notifynewcontent.php</filename>
+        <filename>install_script.php</filename>
+    </files>
+    <languages folder="language">
+        <language tag="en-GB">en-GB/en-GB.plg_system_notifynewcontent.ini</language>
+        <language tag="en-GB">en-GB/en-GB.plg_system_notifynewcontent.sys.ini</language>
+        <language tag="de-DE">de-DE/de-DE.plg_system_notifynewcontent.ini</language>
+        <language tag="de-DE">de-DE/de-DE.plg_system_notifynewcontent.sys.ini</language>
+    </languages>
+    <scriptfile>install_script.php</scriptfile>
+</extension>
