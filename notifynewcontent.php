@@ -31,7 +31,8 @@ class PlgSystemNotifynewcontent extends CMSPlugin
         if ($isNew && $this->isMonitoredContext($context))
         {
             Log::add('New article "' . $article->title . '" detected', Log::DEBUG, 'notifynewcontent');
-            $targetCategoryId = (int) $this->params->get('target_category');
+            $targetCategoryId = (int) $this->params->get('monitor_category');
+            Log::add('Monitoring category: "' . $targetCategoryId, Log::DEBUG, 'notifynewcontent');
             if ($article && $this->isInTargetCategory($article->catid, $targetCategoryId))
             {
                 $this->notifyUsers($article, $targetCategoryId);
@@ -41,7 +42,7 @@ class PlgSystemNotifynewcontent extends CMSPlugin
 
     protected function isMonitoredContext($context)
     {
-        return $context === 'com_content.article';
+        return $context === 'com_content.article' || $context === 'com_content.form';
     }
 
     protected function isInTargetCategory($catid, $targetCategoryId)
@@ -52,9 +53,9 @@ class PlgSystemNotifynewcontent extends CMSPlugin
             ->from($this->db->quoteName('#__categories'))
             ->where($this->db->quoteName('id') . ' = ' . (int) $catid)
             ->where(
-                '('. $this->db->quoteName('id') . ' = ' . (int) $this->targetCategoryId . 
-                ' OR ' . $this->db->quoteName('parent_id') . ' = ' . (int) targetCategoryId . 
-                ' OR ' . $this->db->quoteName('path') . ' LIKE ' . $this->db->quote('%/' . targetCategoryId . '/%') . ')'
+                '('. $this->db->quoteName('id') . ' = ' . (int) $targetCategoryId . 
+                ' OR ' . $this->db->quoteName('parent_id') . ' = ' . (int) $targetCategoryId . 
+                ' OR ' . $this->db->quoteName('path') . ' LIKE ' . $this->db->quote('%/' . $targetCategoryId . '/%') . ')'
             );
 
         $this->db->setQuery($query);
@@ -123,8 +124,8 @@ class PlgSystemNotifynewcontent extends CMSPlugin
 
         // Prepare email subject and body
         Log::add('Generating mail subject and body', Log::DEBUG, 'notifynewcontent');
-        $subject = Text::_('PLG_SYSTEM_NOTIFYNEWCONTENT_EMAIL_SUBJECT');
-        $bodyTemplate = Text::_('PLG_SYSTEM_NOTIFYNEWCONTENT_EMAIL_BODY');
+        $subject = $this->params->get('mail_subject');
+        $bodyTemplate = $this->params->get('mail_body');
 
         // Generate URL
         Log::add('Generating article link', Log::DEBUG, 'notifynewcontent');
