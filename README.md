@@ -12,6 +12,16 @@ When a new article is published to a certain category (or to one of its child ca
 ### Configuration
 Go to *Extensions >> Plugins* to configure the plugin. You can e.g. select the category to monitor, and compose the mail subject and body.
 
+#### Mail template
+For the mail body you can use the following placeholders:
+
+* `{ARTICLE_PUBLISH_DATE}` - The date when the article was published
+* `{ARTICLE_CATEGORY}` - The name of the article's category
+* `{ARTICLE_TITLE}` - The title of the article
+* `{ARTICLE_LINK}` - The SEF link to the article
+* `{ARTICLE_INTROTEXT}` - The article's intro text
+* `{USERNAME}` - The name of the user who gets the mail
+
 ### Known issues
 * You have to manually set the custom user field "Notify on new content" editable by the users, if you want them to be able to choose.
 
