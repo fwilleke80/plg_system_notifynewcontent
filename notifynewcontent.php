@@ -9,11 +9,13 @@ use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Log\Log;
 
+/// @brief Allows the user to receive optional notification emails when new content is posted on the website.
 class PlgSystemNotifynewcontent extends CMSPlugin
 {
-    protected $app;
-    protected $db;
+    protected $app; ///< App
+    protected $db; ///< Database
 
+    /// @brief Constructor
     public function __construct(&$subject, $config)
     {
         parent::__construct($subject, $config);
@@ -22,34 +24,69 @@ class PlgSystemNotifynewcontent extends CMSPlugin
         // Load the plugin language file
         $lang = Factory::getLanguage();
         $lang->load('plg_system_notifynewcontent', JPATH_ADMINISTRATOR, null, true);
-    }
+    } // public function __construct(&$subject, $config)
 
+
+    /// @brief Injects a field into the article form. Used to make the "Notify users" option appear.
+    public function onContentPrepareForm($form, $data)
+    {
+        Log::add('onContentPrepareForm triggered with form->getName() == ' . $form->getName(), Log::DEBUG, 'notifynewcontent');
+        if ($form->getName() == 'com_content.article')
+        {
+            // Is category monitored?
+            $articleCategory = isset($data->catid) ? $data->catid : JFactory::getApplication()->input->get('catid', 0);
+            $monitorCategory = $this->params->get('monitor_category', 0);
+            Log::add('$articleCategory: ' . $articleCategory, Log::DEBUG, 'notifynewcontent');
+            Log::add('$monitorCategory: ' . $monitorCategory, Log::DEBUG, 'notifynewcontent');
+            $isMonitoredCategory = $this->isInTargetCategory($articleCategory, $monitorCategory);
+            Log::add('$isMonitoredCategory: ' . $isMonitoredCategory, Log::DEBUG, 'notifynewcontent');
+
+            // Load the form field XML
+            // TODO: How can we make the checkbox appear in the "Content" group, right next to the category selector??
+            $form->load('<form><fields name="attribs"><fieldset name="notify"><field name="notify-on-publish" type="checkbox" default="' . ($isMonitoredCategory ? '1' : '0') . '" label="PLG_SYSTEM_NOTIFYNEWCONTENT_SEND_NOTIFICATION_LABEL" description="PLG_SYSTEM_NOTIFYNEWCONTENT_SEND_NOTIFICATION_DESC"/></fieldset></fields></form>');
+
+            // Set the default value based on category
+
+            // Default state of the checkbox
+            $form->setFieldAttribute('notify-on-publish', 'checked', $isMonitoredCategory ? 'checked' : '');
+            $form->setValue('notify-on-publish', 'attribs', $isMonitoredCategory ? 1 : 0);
+
+            return true;
+        } // if ($form->getName() == 'com_content.article')
+    } // public function onContentPrepareForm($form, $data)
+
+
+    /// @brief Called after an article has been saved (new or edited). If the article is in a monitored category, notification mails will be sent.
     public function onContentAfterSave($context, $article, $isNew)
     {
         Log::add('onContentAfterSave triggered with context: ' . $context, Log::DEBUG, 'notifynewcontent');
-
-        if ($this->isMonitoredEvent($isNew) && $this->isMonitoredContext($context))
+        
+        // Check if the checkbox was checked
+        $input = JFactory::getApplication()->input;
+        $sendNotification = $input->get('jform', array(), 'array');
+        $sendNotification = isset($sendNotification['attribs']['notify-on-publish']) ? (bool)$sendNotification['attribs']['notify-on-publish'] : false;
+        
+        if ($sendNotification && /* $this->isMonitoredEvent($isNew) &&*/ $this->isMonitoredContext($context))
         {
             Log::add('New article "' . $article->title . '" detected', Log::DEBUG, 'notifynewcontent');
             $targetCategoryId = (int) $this->params->get('monitor_category');
             Log::add('Monitoring category: "' . $targetCategoryId, Log::DEBUG, 'notifynewcontent');
             if ($article && $this->isInTargetCategory($article->catid, $targetCategoryId))
             {
-                $this->notifyUsers($article, $targetCategoryId);
+                $this->notifyUsers($article, $targetCategoryId, $isNew);
             }
         }
-    }
+    } // public function onContentAfterSave($context, $article, $isNew)
 
-    protected function isMonitoredEvent($isNew)
-    {
-        return $isNew || $this->params->get('notify_on_edit');
-    }
 
+    /// @brief Returns `true` if we are within a monitored context (`com_content.article` for articles in the backend, or `com_content.form` for the frontend article form).
     protected function isMonitoredContext($context)
     {
         return $context === 'com_content.article' || $context === 'com_content.form';
-    }
+    } // protected function isMonitoredContext($context)
 
+
+    /// @brief Returns `true` if `$catid` is the same as, or a child of, `$targetCategoryId`.
     protected function isInTargetCategory($catid, $targetCategoryId)
     {
         // Check if the category is the target category or one of its subcategories
@@ -62,22 +99,21 @@ class PlgSystemNotifynewcontent extends CMSPlugin
                 ' OR ' . $this->db->quoteName('parent_id') . ' = ' . (int) $targetCategoryId . 
                 ' OR ' . $this->db->quoteName('path') . ' LIKE ' . $this->db->quote('%/' . $targetCategoryId . '/%') . ')'
             );
-
         $this->db->setQuery($query);
         $result = $this->db->loadResult();
 
-        $categoryMsg = str_replace('{CATEGORYCHECK_RESULT}', $result ? Text::_('PLG_SYSTEM_NOTIFYNEWCONTENT_MSG_CHECKCATEGORY_TRUE') : 'Article posted in non-notification category. Won\'t send any mails.', str_replace('{ARTICLE_CATEGORY}', $catid, Text::_('PLG_SYSTEM_NOTIFYNEWCONTENT_MSG_CHECKCATEGORY')));
-        if ($result)
-        {
-            JFactory::getApplication()->enqueueMessage($categoryMsg, 'message');
-        }
-
+        // Log / debug messages
+        $categoryMsg = 'isInTargetCategory(): $catid=' . $catid . ', $targetCategoryId=' . $targetCategoryId . ' -> ' . $result;
+        // if ($result)
+        //    JFactory::getApplication()->enqueueMessage($categoryMsg, 'message');
         Log::add($categoryMsg, Log::DEBUG, 'notifynewcontent');
 
         return (bool) $result;
-    }
+    } // protected function isInTargetCategory($catid, $targetCategoryId)
 
-    protected function notifyUsers($article, $targetCategoryId)
+
+    /// @brief Queries the database to get a list of users that have enabled the `notify-on-new-content` option in their profile, and sends a notification email to each of them.
+    protected function notifyUsers($article, $targetCategoryId, $isNew)
     {
         // Get the field ID for 'notify-on-new-content'
         $query = $this->db->getQuery(true)
@@ -129,8 +165,8 @@ class PlgSystemNotifynewcontent extends CMSPlugin
 
         // Prepare email subject and body
         Log::add('Generating mail subject and body', Log::DEBUG, 'notifynewcontent');
-        $subject = $this->params->get('mail_subject');
-        $bodyTemplate = $this->params->get('mail_body');
+        $subject =  $isNew ? $this->params->get('mail_subject_new') : $this->params->get('mail_subject_edit');
+        $bodyTemplate = $isNew ? $this->params->get('mail_body_new') : $this->params->get('mail_body_edit');
 
         // Generate URL
         Log::add('Generating article link', Log::DEBUG, 'notifynewcontent');
@@ -142,8 +178,9 @@ class PlgSystemNotifynewcontent extends CMSPlugin
         $articleLink = str_replace('//', '/', $articleLink);
         $articleLink = Uri::root() . ltrim($articleLink, '/');
 
-        // Format the publish date
+        // Format the publish and edit dates
         $publishDate = (new \Joomla\CMS\Date\Date($article->publish_up))->format('d.m.Y');
+        $modifiedDate = (new \Joomla\CMS\Date\Date($article->modified))->format('d.m.Y');
 
         // Get the article introtext
         $introtext = strip_tags($article->introtext);
@@ -151,8 +188,8 @@ class PlgSystemNotifynewcontent extends CMSPlugin
         // Fill data into template
         Log::add('Replacing placeholders in mail body template', Log::DEBUG, 'notifynewcontent');
         $body = str_replace(
-            array('{ARTICLE_TITLE}', '{ARTICLE_CATEGORY}', '{ARTICLE_PUBLISH_DATE}', '{ARTICLE_LINK}', '{ARTICLE_INTROTEXT}'),
-            array($article->title, $categoryName, $publishDate, $articleLink, $introtext),
+            array('{ARTICLE_TITLE}', '{ARTICLE_CATEGORY}', '{ARTICLE_PUBLISH_DATE}', '{ARTICLE_MODIFIED_DATE}', '{ARTICLE_LINK}', '{ARTICLE_INTROTEXT}'),
+            array($article->title, $categoryName, $publishDate, $modifiedDate, $articleLink, $introtext),
             $bodyTemplate
         );
         Log::add('Email body: ' . $body, Log::DEBUG, 'notifynewcontent');
@@ -168,6 +205,7 @@ class PlgSystemNotifynewcontent extends CMSPlugin
             $mail->Send();
 
             Log::add('Email sent to: ' . $user->email, Log::DEBUG, 'notifynewcontent');
-        }
-    }
-}
+        } // foreach ($users as $user)
+    } // protected function notifyUsers($article, $targetCategoryId)
+
+} // class PlgSystemNotifynewcontent
